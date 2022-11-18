@@ -61,6 +61,7 @@ module.exports = class Comment extends Model {
    * Post New Comment
    */
   static async postNewComment ({ pageId, replyTo, content, guestName, guestEmail, user, ip }) {
+ 
     // -> Input validation
     if (user.id === 2) {
       const validation = validate({
@@ -82,7 +83,9 @@ module.exports = class Comment extends Model {
             maximum: 255
           }
         }
-      }, { format: 'flat' })
+      }, { format: 'flat' }
+      
+      )
 
       if (validation && validation.length > 0) {
         throw new WIKI.Error.InputInvalid(validation[0])
@@ -107,6 +110,22 @@ module.exports = class Comment extends Model {
     } else {
       throw new WIKI.Error.PageNotFound()
     }
+
+
+    await WIKI.mail.send({
+      template: 'coment',
+      to: page.authorEmail,
+      subject: `Новый кометарий к статье: `+` `+`"`+page.title+`"`,
+      data: {
+        preheadertext: `ВАЖНО`,
+        title:  `Новый комментарий к статье: `+` `+`"`+page.title+`"`,
+        content: user.name + ` написал: ` +`"`+content+`".  Для более оперативной связи вы можите написать на почту:  `+` `+ user.email,
+        buttonLink: WIKI.config.host+`:4000/`+page.path,
+        buttonText: 'Перейти к странице',
+        
+      },
+      text: `Молодец ты нашел этот текст сообщи о своей находке и ни чего не произойдет ` 
+    })
 
     // -> Process by comment provider
     return WIKI.data.commentProvider.create({
@@ -145,6 +164,20 @@ module.exports = class Comment extends Model {
     } else {
       throw new WIKI.Error.PageNotFound()
     }
+    await WIKI.mail.send({
+      template: 'coment',
+      to: page.authorEmail,
+      subject: `Изменен коментарий к статье: `+` `+`"`+page.title+`"`,
+      data: {
+        preheadertext: `ВАЖНО`,
+        title:  `Изменен коментарий к статье: `+` `+`"`+page.title+`"`,
+        content: user.name + ` написал: ` +`"`+content+`".  Для более оперативной связи вы можите написать на почту:  `+` `+ user.email,
+        buttonLink: WIKI.config.host+`:4000/`+page.path,
+        buttonText: 'Перейти к статье',
+        
+      },
+      text: `Молодец ты нашел этот текст сообщи о своей находке и ни чего не произойдет ` 
+    })
 
     // -> Process by comment provider
     return WIKI.data.commentProvider.update({
@@ -156,6 +189,7 @@ module.exports = class Comment extends Model {
         ip
       }
     })
+    
   }
 
   /**
